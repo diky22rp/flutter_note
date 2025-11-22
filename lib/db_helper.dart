@@ -1,6 +1,6 @@
 import 'package:flutter_note/models/note_model.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DbHelper {
   static const String _databaseName = "notes.db";
@@ -54,7 +54,7 @@ class DbHelper {
     return id;
   }
 
-  Future<List<NoteModel>> fetchNotes() async {
+  Future<List<NoteModel>> fetchItem() async {
     final db = await database;
     final maps = await db.query(
       _tableName,
@@ -68,5 +68,20 @@ class DbHelper {
     return List.generate(maps.length, (i) {
       return NoteModel.fromJson(maps[i]);
     });
+  }
+
+  Future<int> deleteItem(int id) async {
+    final db = await database;
+    return await db.delete('notes', where: 'note_id = ?', whereArgs: [id]);
+  }
+
+  Future<int> updateItem(NoteModel note) async {
+    final db = await database;
+    return await db.update(
+      _tableName,
+      note.toJson(),
+      where: 'note_id = ?',
+      whereArgs: [note.noteId],
+    );
   }
 }

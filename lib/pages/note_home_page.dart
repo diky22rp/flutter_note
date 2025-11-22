@@ -24,7 +24,7 @@ class _NoteListPageState extends State<NoteHomePage> {
   Future<void> _loadNotes() async {
     // TODO: Load notes from database
     // Simulating database with sample data
-    final noteList = await dbHelper.fetchNotes();
+    final noteList = await dbHelper.fetchItem();
 
     setState(() {
       _notes = noteList;
@@ -45,18 +45,14 @@ class _NoteListPageState extends State<NoteHomePage> {
   }
 
   void _navigateToEditNote(NoteModel note) async {
-    // Navigate to edit note page
-    // final result = await Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => NoteEditorPage(note: note),
-    //   ),
-    // );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NoteEditorPage(note: note)),
+    );
 
-    // Reload notes after returning from edit page
-    // if (result != null) {
-    //   _loadNotes();
-    // }
+    if (result == true) {
+      _loadNotes();
+    }
   }
 
   void _deleteNote(int noteId) {
@@ -71,12 +67,14 @@ class _NoteListPageState extends State<NoteHomePage> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               // TODO: Delete from database
-              // setState(() {
-              //   //_notes.removeWhere((note) => note.id == noteId);
-              // });
+              await dbHelper.deleteItem(noteId);
+
+              await _loadNotes();
+
               Navigator.pop(context);
+
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(const SnackBar(content: Text('Note deleted')));

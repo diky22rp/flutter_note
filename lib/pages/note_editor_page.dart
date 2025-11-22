@@ -3,7 +3,9 @@ import 'package:flutter_note/db_helper.dart';
 import 'package:flutter_note/models/note_model.dart';
 
 class NoteEditorPage extends StatefulWidget {
-  const NoteEditorPage({Key? key}) : super(key: key);
+  final NoteModel? note; // <<— Tambahkan
+
+  const NoteEditorPage({super.key, this.note});
 
   @override
   State<NoteEditorPage> createState() => _NoteEditorPageState();
@@ -17,6 +19,17 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   final _contentController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    // if edit , fill field
+    if (widget.note != null) {
+      _titleController.text = widget.note!.title;
+      _contentController.text = widget.note!.content;
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
@@ -25,76 +38,51 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   Future _saveNote() async {
     if (_formKey.currentState!.validate()) {
-      // Get the note data
-      final title = _titleController.text;
-      final content = _contentController.text;
+      final now = DateTime.now().toIso8601String();
 
-      final result = dbHelper.insertItem(
-        NoteModel(
-          noteId: null,
-          title: title,
-          content: content,
-          createdAt: DateTime.now().toIso8601String(),
-          updatedAt: DateTime.now().toIso8601String(),
-          pinned: false,
-        ),
-      );
-
-      // TODO: Save the note to database or storage
-      print(
-        'Saving note - Title: $title, Content: $content, Id: ${await result}',
-      );
-
-      // Show success message
-      if (await result > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Note saved successfully!'),
-            backgroundColor: Colors.green,
+      if (widget.note == null) {
+        // INSERT MODE
+        await dbHelper.insertItem(
+          NoteModel(
+            noteId: null,
+            title: _titleController.text,
+            content: _contentController.text,
+            createdAt: now,
+            updatedAt: now,
+            pinned: false,
+          ),
+        );
+      } else {
+        // UPDATE MODE
+        await dbHelper.updateItem(
+          NoteModel(
+            noteId: widget.note!.noteId,
+            title: _titleController.text,
+            content: _contentController.text,
+            createdAt: widget.note!.createdAt,
+            updatedAt: now,
+            pinned: widget.note!.pinned,
           ),
         );
       }
 
-      // Navigate back
-      Navigator.pop(context, result);
+      Navigator.pop(context, true);
     }
   }
 
   void _cancelNote() {
-    // Show confirmation dialog if there's unsaved content
-    if (_titleController.text.isNotEmpty ||
-        _contentController.text.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Discard changes?'),
-          content: const Text(
-            'You have unsaved changes. Do you want to discard them?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Stay'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Go back to previous page
-              },
-              child: const Text('Discard'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      Navigator.pop(context);
-    }
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Note'), elevation: 0),
+      appBar: AppBar(
+        title: Text(
+          widget.note == null ? 'New Note' : 'Edit Note',
+        ), // dynamic title
+        elevation: 0,
+      ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -102,7 +90,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Title field
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -113,17 +100,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                   ),
                   prefixIcon: Icon(Icons.title),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-                textCapitalization: TextCapitalization.words,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a title'
+                    : null,
               ),
               const SizedBox(height: 16),
 
-              // Content field
               TextFormField(
                 controller: _contentController,
                 decoration: const InputDecoration(
@@ -136,41 +118,27 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                 ),
                 maxLines: 15,
                 minLines: 10,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter content';
-                  }
-                  return null;
-                },
-                textCapitalization: TextCapitalization.sentences,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter content'
+                    : null,
               ),
               const SizedBox(height: 24),
 
-              // Buttons
               Row(
                 children: [
-                  // Cancel button
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _cancelNote,
                       icon: const Icon(Icons.cancel),
                       label: const Text('Cancel'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
-
-                  // Save button
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _saveNote,
                       icon: const Icon(Icons.save),
                       label: const Text('Save'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                     ),
                   ),
                 ],

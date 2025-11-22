@@ -46,7 +46,7 @@ class NoteModel {
   }
 
   Map<String, dynamic> toJson() {
-    final pinnedConverted = this.pinned ? 1 : 0;
+    final pinnedConverted = pinned ? 1 : 0;
 
     return {
       "note_id": noteId,
