@@ -5,26 +5,71 @@ class FirestoreHelper {
   final noteRef = FirebaseFirestore.instance
       .collection("notes")
       .withConverter<NoteModel>(
-        fromFirestore: (snapshot, _) => NoteModel.fromJson(snapshot.data()!),
+        fromFirestore: (snapshot, _) {
+          final data = snapshot.data()!;
+          data["note_id"] ??= snapshot.id;
+          return NoteModel.fromJson(data);
+        },
         toFirestore: (note, _) => note.toJson(),
       );
 
-  Future addNote(NoteModel note) async {
-    await noteRef.add(note);
-    // await noteRef.doc(note.noteId.toString()).set(note);
+  /// CREATE
+  Future<String> insertItem(NoteModel note) async {
+    final doc = await noteRef.add(note);
+    await doc.update({"note_id": doc.id});
+    return doc.id;
   }
 
-  Future<List<NoteModel>> getAllNotes() async {
-    final dataSnapshot = await noteRef.get();
-    // final debug = dataSnapshot.docs.map((doc) => doc.data()).toList();
-    // print(debug);
-    return dataSnapshot.docs.map((doc) => doc.data()).toList();
+  /// READ - GET ALL
+  Future<List<NoteModel>> fetchItem() async {
+    final snapshot = await noteRef
+        .orderBy("created_at", descending: true)
+        .get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-   Future removeNote(int noteId) async {
-    await noteRef.doc(noteId.toString()).delete();
+  /// READ - GET BY ID
+  Future<NoteModel?> getNoteById(String id) async {
+    final doc = await noteRef.doc(id).get();
+    return doc.data();
   }
 
+  /// UPDATE FULL
+  Future<void> updateItem(NoteModel note) async {
+    if (note.noteId == null || note.noteId.toString().isEmpty) {
+      throw Exception("note_id is required");
+    }
+    await noteRef.doc(note.noteId.toString()).set(note);
+  }
 
-  
+  /// UPDATE PARTIAL
+  Future<void> updateFields(String id, Map<String, dynamic> fields) async {
+    await noteRef.doc(id).update(fields);
+  }
+
+  /// DELETE
+  Future<void> deleteItem(String id) async {
+    await noteRef.doc(id).delete();
+  }
+
+  // ---------------------------------------------------------
+  // REALTIME STREAMS
+  // ---------------------------------------------------------
+
+  /// STREAM ALL NOTES (REALTIME)
+  Stream<List<NoteModel>> streamAllNotes() {
+    return noteRef.orderBy("created_at", descending: true).snapshots().map((
+      snapshot,
+    ) {
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    });
+  }
+
+  /// STREAM SINGLE NOTE BY ID (REALTIME)
+  Stream<NoteModel?> streamNoteById(String id) {
+    return noteRef.doc(id).snapshots().map((snapshot) {
+      if (!snapshot.exists) return null;
+      return snapshot.data();
+    });
+  }
 }
