@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_note/db_helper.dart';
+import 'package:flutter_note/firestore_helper.dart';
 import 'package:flutter_note/models/note_model.dart';
 import 'package:flutter_note/pages/note_editor_page.dart';
 
@@ -11,7 +11,9 @@ class NoteHomePage extends StatefulWidget {
 }
 
 class _NoteListPageState extends State<NoteHomePage> {
-  final DbHelper dbHelper = DbHelper.instance;
+  // final DbHelper dbHelper = DbHelper.instance;
+
+  final FirestoreHelper dbHelper = FirestoreHelper();
 
   List<NoteModel> _notes = [];
 
@@ -55,7 +57,7 @@ class _NoteListPageState extends State<NoteHomePage> {
     }
   }
 
-  void _deleteNote(int noteId) {
+  void _deleteNote(String noteId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -69,7 +71,8 @@ class _NoteListPageState extends State<NoteHomePage> {
           TextButton(
             onPressed: () async {
               // TODO: Delete from database
-              await dbHelper.deleteItem(noteId);
+              // await dbHelper.deleteItem(noteId);
+              await dbHelper.deleteItem(noteId.toString());
 
               await _loadNotes();
 
