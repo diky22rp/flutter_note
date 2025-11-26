@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_note/db_helper.dart';
+import 'package:flutter_note/firestore_helper.dart';
 import 'package:flutter_note/models/note_model.dart';
 
 class NoteEditorPage extends StatefulWidget {
@@ -12,7 +12,8 @@ class NoteEditorPage extends StatefulWidget {
 }
 
 class _NoteEditorPageState extends State<NoteEditorPage> {
-  final DbHelper dbHelper = DbHelper.instance;
+  // final DbHelper dbHelper = DbHelper.instance;
+  final FirestoreHelper dbHelper = FirestoreHelper();
 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
