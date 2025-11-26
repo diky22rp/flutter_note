@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_note/firestore_helper.dart';
 import 'package:flutter_note/models/note_model.dart';
@@ -106,8 +107,24 @@ class _NoteListPageState extends State<NoteHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('My Notes'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('My Notes'),
+        elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                user?.email ?? '',
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: _notes.isEmpty ? _buildEmptyState() : _buildNoteList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreateNote,
