@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_note/auth_helper.dart';
+import 'package:flutter_note/firestore_user_helper.dart';
+import 'package:flutter_note/models/user_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class SigninPage extends StatefulWidget {
@@ -14,6 +16,8 @@ class _SigninPageState extends State<SigninPage> {
   final AuthHelper authHelper = AuthHelper();
   TextEditingController emailController = TextEditingController();
   TextEditingController psswdController = TextEditingController();
+
+  final fsUserHelper = FirestoreUserHelper();
 
   bool passwordVisible = true;
   @override
@@ -153,9 +157,17 @@ class _SigninPageState extends State<SigninPage> {
     try {
       final result = await authHelper.signInWithGoogle();
 
-      if (result != null) {
+      if (result?.user != null) {
+        fsUserHelper.addUser(
+          UserModel(
+            userId: result?.user?.uid ?? '',
+            userName: result?.user?.displayName ?? '',
+            userEmail: result?.user?.email ?? '',
+          ),
+        );
+
         if (mounted) {
-          _showSnackbar('Signin success as ${result.user?.email}');
+          _showSnackbar('Signin success as ${result?.user?.email}');
           //Navigator.pushNamed(context, NavigationRoutes.movieList.name);
         }
       }
